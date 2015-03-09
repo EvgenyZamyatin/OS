@@ -1,10 +1,10 @@
 all: cat 
 
 
-cat: libhelpers
-	gcc -L/home/evgeny/programming/os/lib -Wl,-rpath=/home/evgeny/programming/os/lib -Wall -o cat cat.c -lhelpers
+cat: libhelpers.so
+	gcc cat.c -L../lib -I../lib -Wl,-rpath=../lib -lhelpers -o cat
 
-libhelpers:
+libhelpers.so:
 	make -C ../lib/
 
 
