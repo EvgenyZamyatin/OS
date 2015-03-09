@@ -11,7 +11,7 @@ int main()
 		void* buf = malloc(LEN);
 		int have = 0;
 		int red;
-		while((red = read_(STDIN_FILENO, (char*)buf + have, LEN)) == LEN && red != 0) 
+		while((red = read_(STDIN_FILENO, (char*)buf + have, LEN)) != 0) 
 		{
 			have += red;
 			void* nbuf = malloc(have);
