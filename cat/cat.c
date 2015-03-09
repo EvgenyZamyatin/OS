@@ -1,27 +1,17 @@
 #include "../lib/helpers.h"
 #include <string.h>
 #include <stdlib.h>
-
-const int LEN = 1024;
+#define LEN 1024
 
 int main() 
 {
+	char buf[LEN];
 	while (1)
 	{
-		void* buf = malloc(LEN);
-		int have = 0;
-		int red;
-		while((red = read_(STDIN_FILENO, (char*)buf + have, LEN)) != 0) 
-		{
-			have += red;
-			void* nbuf = malloc(have);
-			memcpy(nbuf, buf, have);
-			free(buf);
-			buf = nbuf;
-		}
-		have += red;
-		write_(STDOUT_FILENO, buf, have);
-		free(buf);
+		int red = read_(STDIN_FILENO, buf, LEN); 
+		if (red == 0)
+			break;
+		write_(STDOUT_FILENO, buf, red);
 	}
 	return 0;
 }
