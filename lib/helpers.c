@@ -78,6 +78,8 @@ ssize_t read_until(int fd, void* out_buf, size_t count, char delimiter)
 		if (i == buf->len) 
 		{	
 			cnt = read(fd, buf->data + buf->len, count);
+			if (cnt == -1)
+				cnt = 0;
 			buf->len += cnt;
 			count -= cnt;
 		}
@@ -95,8 +97,6 @@ ssize_t read_until(int fd, void* out_buf, size_t count, char delimiter)
 		}
 		++i;
 	}	
-	//if (((char*)out_buf)[copied_bytes - 1] == delimiter)
-	//	--copied_bytes;
 	return copied_bytes;
 }
 

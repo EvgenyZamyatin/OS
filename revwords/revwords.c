@@ -25,7 +25,8 @@ int main()
 	{	
 		reverse(buf, red);
 		((char*)buf)[red] = ' ';
-		write_(STDOUT_FILENO, buf, red + 1);
+		if (write_(STDOUT_FILENO, buf, red + 1) < 0)
+			break;
 		memset(buf, 0, LEN);
 	}
 	free(buf);

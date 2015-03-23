@@ -16,9 +16,9 @@ int main()
 	{	
 		((char*)buf)[red] = 0;
 		sprintf(buf, "%d", (int)strlen(buf)-1);
-		write_(STDOUT_FILENO, buf, strlen(buf));
+		if (write_(STDOUT_FILENO, buf, strlen(buf)) <= 0)
+			break;
 	}
-
 	((char*)buf)[0] = '\n';
 	((char*)buf)[1] = 0;
 	write_(STDOUT_FILENO, buf, strlen(buf));
