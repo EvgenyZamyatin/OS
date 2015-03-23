@@ -95,8 +95,27 @@ ssize_t read_until(int fd, void* out_buf, size_t count, char delimiter)
 		}
 		++i;
 	}
+	if (((char*)out_buf)[copied_bytes - 1] == delimiter)
+		--copied_bytes;
 	return copied_bytes;
 }
 
+int spawn(const char* file, char* const argv[]) {
+	int np = fork();
+	if (np == -1)
+		return -1;
+	if (np) {
+		int res;
+ 		waitpid(np, &res, 0);
+ 		return res;
+	} else {
+		int fd = open("/dev/null",  O_WRONLY);
+    dup2(fd, STDOUT_FILENO);              
+    dup2(fd, STDOUT_FILENO);              
+    dup2(fd, STDERR_FILENO);              
+    close(fd);
+		return execvp(file, argv);
+	}
+}
 
 
