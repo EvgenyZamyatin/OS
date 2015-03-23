@@ -17,18 +17,15 @@ void reverse(char* str, int len)
 
 int main() 
 {
-	void* buf = malloc(LEN);
+	void* buf = malloc(LEN+1);
 	memset(buf, 0, LEN);
 	int have = 0;
 	int red;
 	while((red = read_until(STDIN_FILENO, (char*)buf, LEN, ' ')) != 0) 
 	{	
-		if (((char*)buf)[red - 1] == ' ')
-			reverse(buf, red - 1);
-		else 
-			reverse(buf, red);
-		
-		write_(STDOUT_FILENO, buf, red);
+		reverse(buf, red);
+		((char*)buf)[red] = ' ';
+		write_(STDOUT_FILENO, buf, red + 1);
 		memset(buf, 0, LEN);
 	}
 	free(buf);
