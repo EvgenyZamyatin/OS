@@ -5,15 +5,6 @@
 const int LEN = 4096;
 
 
-void reverse(char* str, int len) 
-{
-	for (int i = 0; i < len / 2; ++i) 
-	{
-		char tmp = str[i];
-		str[i] = str[len - i - 1];
-		str[len - i - 1] = tmp;
-	}
-}
 
 int main() 
 {
@@ -23,12 +14,14 @@ int main()
 	int red;
 	while((red = read_until(STDIN_FILENO, (char*)buf, LEN, ' ')) != 0) 
 	{	
-		reverse(buf, red);
-		((char*)buf)[red] = ' ';
-		if (write_(STDOUT_FILENO, buf, red + 1) < 0)
+		((char*)buf)[red] = 0;
+		sprintf(buf, "%d", (int)strlen(buf)-1);
+		if (write_(STDOUT_FILENO, buf, strlen(buf)) <= 0)
 			break;
-		memset(buf, 0, LEN);
 	}
+	((char*)buf)[0] = '\n';
+	((char*)buf)[1] = 0;
+	write_(STDOUT_FILENO, buf, strlen(buf));
 	free(buf);
 	return 0;
 }

@@ -9,9 +9,10 @@ int main()
 	while (1)
 	{
 		int red = read_(STDIN_FILENO, buf, LEN); 
-		if (red == 0)
+		if (red <= 0)
 			break;
-		write_(STDOUT_FILENO, buf, red);
+		if (write_(STDOUT_FILENO, buf, red) < 0)
+			break;
 	}
 	return 0;
 }
