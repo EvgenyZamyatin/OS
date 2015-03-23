@@ -94,9 +94,9 @@ ssize_t read_until(int fd, void* out_buf, size_t count, char delimiter)
 			break;
 		}
 		++i;
-	}
-	if (((char*)out_buf)[copied_bytes - 1] == delimiter)
-		--copied_bytes;
+	}	
+	//if (((char*)out_buf)[copied_bytes - 1] == delimiter)
+	//	--copied_bytes;
 	return copied_bytes;
 }
 
