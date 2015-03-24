@@ -100,6 +100,8 @@ ssize_t read_until(int fd, void* out_buf, size_t count, char delimiter)
 	return copied_bytes;
 }
 
+
+//First argument must be name of executable file.
 int spawn(const char* file, char* const argv[]) {
 	int np = fork();
 	if (np == -1)
