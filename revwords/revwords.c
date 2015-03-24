@@ -23,8 +23,13 @@ int main()
 	int red;
 	while((red = read_until(STDIN_FILENO, (char*)buf, LEN, ' ')) != 0) 
 	{	
-		reverse(buf, red);
-		((char*)buf)[red] = ' ';
+		if (((char*)buf)[red - 1] == ' ') {
+			((char*)buf)[red - 1] = 0;
+			reverse(buf, red - 1);
+			((char*)buf)[red - 1] = ' ';
+		} else {
+			reverse(buf, red);
+		}
 		if (write_(STDOUT_FILENO, buf, red + 1) < 0)
 			break;
 		memset(buf, 0, LEN);
