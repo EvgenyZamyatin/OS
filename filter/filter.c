@@ -12,10 +12,13 @@ int main(int argc, char* args[]) {
 	int len;
 	while ((len = read_until(STDIN_FILENO, buf, BUF_LEN, '\n')) > 0) {
 		buf[len-1] = 0;
-		if (spawn(args[1], newargs) == 0) 
-			printf("%s\n", buf);
+		if (spawn(args[1], newargs) == 0) {
+			write_(STDOUT_FILENO, buf, len);
+			buf[0] = '\n';
+			buf[1] = 0;
+			write_(STDOUT_FILENO, buf, 2);
+		}
 	}
 	free(newargs);
-
 	return 0;
 }
