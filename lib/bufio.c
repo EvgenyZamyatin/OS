@@ -1,4 +1,9 @@
 #include "bufio.h"
+#ifdef DEBUG
+#define check(f) if(!(f)) abort();
+#else 
+#define check(f)  
+#endif
 
 
 struct buf_t* buf_new(size_t capacity) {
@@ -15,21 +20,26 @@ struct buf_t* buf_new(size_t capacity) {
 }
 
 void buf_free(struct buf_t *buf) {
+	check(buf != NULL);
 	free(buf->data);
 	free(buf);
 }
 
 size_t buf_capacity(struct buf_t *buf) {
+	check(buf != NULL);
 	return buf->capacity;
 }
 
 size_t buf_size(struct buf_t *buf) {
+	check(buf != NULL);
 	return buf->size;
 }
 
 ssize_t buf_fill(int fd, buf_t *buf, size_t required) {
 	if (required == -1)
 		required = buf->capacity;
+	check(buf != NULL);
+	check(required <= buf_capacity(buf));
 	buf->size = 0;
 	int rad = 0;
 	int now = -1;
@@ -46,6 +56,8 @@ ssize_t buf_fill(int fd, buf_t *buf, size_t required) {
 ssize_t buf_flush(int fd, buf_t *buf, size_t required) {
 	if (required == -1)
 		required = buf_size(buf);
+	check(buf != NULL);
+	check(required <= buf_capacity(buf));
 	int wrote = 0;
 	int now = -1;
 	while (wrote < required && now != 0) {
