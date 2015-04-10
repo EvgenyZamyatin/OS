@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "../lib/helpers.h"
 
 typedef struct buf_t {
 	size_t capacity;
@@ -19,5 +20,6 @@ size_t buf_capacity(buf_t *);
 size_t buf_size(buf_t *);
 ssize_t buf_fill(int fd, buf_t *buf, size_t required);
 ssize_t buf_flush(int fd, buf_t *buf, size_t required);
+ssize_t buf_getline(int fd, buf_t *buf, char* dest);
 
 #endif

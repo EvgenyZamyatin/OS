@@ -71,6 +71,31 @@ ssize_t buf_flush(int fd, buf_t *buf, size_t required) {
 	return wrote;
 }
 
-
+ssize_t buf_getline(int fd, buf_t *buf, char* dest) {
+	int i = 0;
+	int c = -1;
+	while (buf_size(buf) == 0 || buf->data[i] != '\n') {
+		if (buf_size(buf) == i) {
+			if ((c = read_until(fd, buf->data + buf_size(buf), buf_capacity(buf) - buf_size(buf), '\n')) < 0) {
+				return -1;
+			}
+			if (c == 0) {
+				return 0;
+			}
+			buf->size += c; 
+			continue; 
+		}
+		++i;
+	}
+	if (buf_size(buf) == 0 || buf->data[buf_size(buf)-1] != '\n') {
+		buf->data[buf_size(buf)-1] = '\n';
+		buf->size++;
+	}
+	++i;
+	memcpy(dest, buf->data, i);
+	memmove(buf->data, buf->data + i, buf_size(buf) - i);
+	buf->size -= i;
+	return i;
+}
 
 
