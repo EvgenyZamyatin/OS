@@ -18,8 +18,7 @@ int main(int argc, char* args[]) {
 		if (spawn(args[1], newargs) == 0) {
 			write_(STDOUT_FILENO, buf, len);
 			buf[0] = '\n';
-			buf[1] = 0;
-			write_(STDOUT_FILENO, buf, 2);
+			write_(STDOUT_FILENO, buf, 1);
 		}
 	}
 	free(newargs);

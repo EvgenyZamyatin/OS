@@ -12,4 +12,6 @@ clean:
 	rm -f helpers.o
 	rm -f bufio.h.gch
 	rm -f bufio.o
+	rm -f libbufio.so
+	rm -f libhelpers.so
 

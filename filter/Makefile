@@ -7,5 +7,8 @@ cat: libhelpers.so
 libhelpers.so:
 	make -C ../lib/
 
+clean: 
+	rm -f filter
+
 
 

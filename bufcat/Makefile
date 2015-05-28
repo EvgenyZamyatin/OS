@@ -7,5 +7,8 @@ bufcat: libbufio.so
 libbufio.so:
 	make -C ../lib/
 
+clean:
+	rm -f bufcat
+
 
 

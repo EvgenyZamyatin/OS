@@ -30,7 +30,7 @@ int main()
 		} else {
 			reverse(buf, red);
 		}
-		if (write_(STDOUT_FILENO, buf, red + 1) < 0)
+		if (write_(STDOUT_FILENO, buf, red) < 0)
 			break;
 		memset(buf, 0, LEN);
 	}

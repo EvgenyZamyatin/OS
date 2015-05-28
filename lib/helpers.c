@@ -100,7 +100,6 @@ ssize_t read_until(int fd, void* out_buf, size_t count, char delimiter)
 	return copied_bytes;
 }
 
-
 //First argument must be name of executable file.
 int spawn(const char* file, char* const argv[]) {
 	int np = fork();
@@ -111,13 +110,111 @@ int spawn(const char* file, char* const argv[]) {
  		waitpid(np, &res, 0);
  		return res;
 	} else {
-		int fd = open("/dev/null",  O_WRONLY);
-    dup2(fd, STDOUT_FILENO);              
-    dup2(fd, STDOUT_FILENO);              
-    dup2(fd, STDERR_FILENO);              
-    close(fd);
-		return execvp(file, argv);
+		//int fd = open("/dev/null",  O_WRONLY);
+        //dup2(fd, STDOUT_FILENO);              
+        //dup2(fd, STDOUT_FILENO);              
+        //dup2(fd, STDERR_FILENO);              
+        //close(fd);
+		execvp(file, argv);
+        exit(0);
 	}
 }
+
+execargs_t* execargs(char *file, char** args) {
+    execargs_t* ans = malloc(sizeof(execargs_t));
+    *ans = (execargs_t){
+        .file = file,
+        .args = args,
+        .outfd = -1,
+        .infd = -1
+    };
+    return ans;
+}
+
+static void sigint_ignore(int sig) {};
+static void sigint_exit(int sig) {
+    char buf[256];
+    sprintf(buf, "Process %d killed\n", getpid());
+    write(STDERR_FILENO, buf, strlen(buf));
+    exit(0);
+}
+
+int exec(execargs_t *args) {
+    int np = fork();
+	if (np == -1)
+		return -1;
+	if (np) {
+ 		return np;
+	} else {
+        //close(cls);
+        signal(SIGINT, sigint_exit);
+        if (((args->outfd > 0 && dup2(args->outfd, STDOUT_FILENO) < 0) ||
+                (args->infd > 0 && dup2(args->infd, STDIN_FILENO) < 0))) {
+            return -1;
+        }
+        execvp(args->file, args->args);
+        exit(0);
+	};
+    return np;
+}
+
+int runpiped(execargs_t** p, size_t n) {
+    if (signal(SIGINT, sigint_ignore) < 0) {
+        perror("Cant bind signal handler");
+        return -1;
+    }
+    int ans = 0;
+    int last = -1;
+    int lastproc = -1;
+    for (int i = 0; i < n; ++i) {
+        int pipefd[2];
+        if (pipe(pipefd) < 0) {
+            ans = -1;
+            break;
+        }
+        if (i > 0) 
+            p[i]->infd = last;
+        else 
+            p[i]->infd = -1;
+
+        if (i != n - 1) 
+            p[i]->outfd = pipefd[1];
+        else 
+            p[i]->outfd = -1;
+        if ((lastproc = exec(p[i])) < 0) {
+            ans = -1;
+            break;
+        }
+        if (i > 0)
+            close(last);
+        close(pipefd[1]);
+        last = pipefd[0];
+    }
+    close(last);
+    if (ans == -1)
+        perror("Error at runepiped");
+    int res;
+    waitpid(lastproc, NULL, 0);
+    kill(-getpid(), SIGINT);
+    //pause();
+    signal(SIGINT, sigint_exit); 
+    return ans;
+}
+
+int main() {
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 

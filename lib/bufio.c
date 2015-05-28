@@ -36,8 +36,6 @@ size_t buf_size(struct buf_t *buf) {
 }
 
 ssize_t buf_fill(int fd, buf_t *buf, size_t required) {
-	if (required == -1)
-		required = buf->capacity;
 	check(buf != NULL);
 	check(required <= buf_capacity(buf));
 	buf->size = 0;
