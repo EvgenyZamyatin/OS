@@ -1,4 +1,4 @@
-all: libhelpers bufio clean
+all: libhelpers bufio
 
 libhelpers:
 	gcc -std=c99 -c -fpic helpers.h helpers.c 
@@ -7,6 +7,7 @@ libhelpers:
 bufio:
 	gcc -std=c99 -D DEBUG -c -fpic bufio.h bufio.c 
 	gcc -std=c99 -shared -o libbufio.so bufio.o
+
 clean:
 	rm -f helpers.h.gch
 	rm -f helpers.o

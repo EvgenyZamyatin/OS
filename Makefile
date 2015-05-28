@@ -9,9 +9,8 @@ $(SUBDIRS):
 .PHONY: all $(SUBDIRS)
 
 
-clean: $(SUBDIRS)
-
-
-$(SUBDIRS):
-	$(MAKE) clean -C $@
+clean: 
+	for D in $(SUBDIRS); do ($(MAKE) clean -C $$D); done
 	find . -type f -name '*~' -exec rm -f '{}' \;
+
+
