@@ -146,7 +146,6 @@ int exec(execargs_t *args) {
 	if (np) {
  		return np;
 	} else {
-        //close(cls);
         signal(SIGINT, sigint_exit);
         if (((args->outfd > 0 && dup2(args->outfd, STDOUT_FILENO) < 0) ||
                 (args->infd > 0 && dup2(args->infd, STDIN_FILENO) < 0))) {
@@ -159,10 +158,10 @@ int exec(execargs_t *args) {
 }
 
 int runpiped(execargs_t** p, size_t n) {
-    if (signal(SIGINT, sigint_ignore) < 0) {
-        perror("Cant bind signal handler");
-        return -1;
-    }
+    //if (signal(SIGINT, sigint_ignore) < 0) {
+    //    perror("Cant bind signal handler");
+    //    return -1;
+    //}
     int ans = 0;
     int last = -1;
     int lastproc = -1;
@@ -197,7 +196,7 @@ int runpiped(execargs_t** p, size_t n) {
     waitpid(lastproc, NULL, 0);
     kill(-getpid(), SIGINT);
     //pause();
-    signal(SIGINT, sigint_exit); 
+    //signal(SIGINT, sigint_exit); 
     return ans;
 }
 

@@ -8,8 +8,10 @@ int ewrite(int fd, char* buf, int len) {
         len -= n;
         buf += n;
     }
-    if (n != 0)
+    if (n != 0) {
+        perror("ewrite");
         exit(0);
+    }
     return 0;
 }
 
@@ -64,31 +66,41 @@ void print(execargs_t** ea, int n) {
 
 buf_t* iobuf;
 
-void sigquit_handler(int sig) {
-    //printf ("SIGINT catched\n");
-    exit(0);
+void handler(int sig) {
+    if (sig == SIGINT) 
+        ewrite(STDOUT_FILENO, "\n", 1);
+    else if (sig == SIGQUIT) {
+        kill(0, SIGINT);
+        exit(0);
+    }
 }
 
 int main() {
-    if (signal(SIGQUIT, sigquit_handler) == SIG_ERR) {
-        printf("Can't bind handler to SIGQUIT");
+    if ((signal(SIGQUIT, handler) == SIG_ERR) 
+            || (signal(SIGINT, SIG_IGN) == SIG_ERR)) {
+        printf("Can't bind handler\n");
     }
     char buf[4096];
     iobuf = buf_new(4096);
-    while (1) {
+    int res = 0;
+    while (1) { 
         ewrite(STDOUT_FILENO, "$", 1);
         int len = buf_getline(STDIN_FILENO, iobuf, buf);
+        if (len == 0)
+            continue;
         buf[len-1] = 0;
+        if (len == 5 && memcmp(buf, "exit", 4) == 0)
+            break;
         execargs_t* ea[256];
         int n;
         getexecargs(buf, len-1, ea, &n);
-        if (n > 0 && runpiped(ea, n) < 0)
+        if (n > 0 && (res = runpiped(ea, n)) < 0)
             break;
         for (int i = 0; i < n; ++i) {
             free(ea[i]->args);
             free(ea[i]); 
         }
     }
-    perror("shell crashed");
+    ewrite(STDOUT_FILENO, "\n", 1);
     return 0;
 }
