@@ -87,10 +87,8 @@ int main() {
         ewrite(STDOUT_FILENO, "$", 1);
         int len = buf_getline(STDIN_FILENO, iobuf, buf);
         if (len == 0)
-            continue;
-        buf[len-1] = 0;
-        if (len == 5 && memcmp(buf, "exit", 4) == 0)
             break;
+        buf[len-1] = 0;
         execargs_t* ea[256];
         int n;
         getexecargs(buf, len-1, ea, &n);

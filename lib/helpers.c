@@ -132,12 +132,13 @@ execargs_t* execargs(char *file, char** args) {
 }
 
 static void sigint_ignore(int sig) {};
-static void sigint_exit(int sig) {
+static void sig_exit(int sig) {
     char buf[256];
     sprintf(buf, "Process %d killed\n", getpid());
     write(STDERR_FILENO, buf, strlen(buf));
     exit(0);
 }
+
 
 int exec(execargs_t *args) {
     int np = fork();
@@ -146,22 +147,17 @@ int exec(execargs_t *args) {
 	if (np) {
  		return np;
 	} else {
-        signal(SIGINT, sigint_exit);
+        signal(SIGINT, sig_exit);
         if (((args->outfd > 0 && dup2(args->outfd, STDOUT_FILENO) < 0) ||
                 (args->infd > 0 && dup2(args->infd, STDIN_FILENO) < 0))) {
             return -1;
         }
         execvp(args->file, args->args);
-        exit(0);
 	};
     return np;
 }
 
 int runpiped(execargs_t** p, size_t n) {
-    //if (signal(SIGINT, sigint_ignore) < 0) {
-    //    perror("Cant bind signal handler");
-    //    return -1;
-    //}
     int ans = 0;
     int last = -1;
     int lastproc = -1;
