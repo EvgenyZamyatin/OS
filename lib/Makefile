@@ -1,10 +1,10 @@
-all: libhelpers bufio
+all: libhelpers.so libbufio.so
 
-libhelpers:
+libhelpers.so:
 	gcc -std=c99 -c -fpic helpers.h helpers.c 
 	gcc -std=c99 -shared -o libhelpers.so helpers.o
 
-bufio:
+libbufio.so:
 	gcc -std=c99 -D DEBUG -c -fpic bufio.h bufio.c 
 	gcc -std=c99 -shared -o libbufio.so bufio.o
 

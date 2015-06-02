@@ -1,6 +1,6 @@
-all: simplesh.c
+all: simplesh
 
-simplesh.c: libhelpers.so
+simplesh: libhelpers.so
 	gcc -std=c99 simplesh.c -L../lib -I../lib -Wl,-rpath=../lib -lbufio -lhelpers -o simplesh
 
 libhelpers.so:

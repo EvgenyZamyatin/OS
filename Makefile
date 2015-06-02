@@ -1,4 +1,4 @@
-SUBDIRS = lib cat foreach revwords filter bufcat simplesh
+SUBDIRS = lib cat foreach revwords filter bufcat simplesh filesender
 
 all: $(SUBDIRS)
 	

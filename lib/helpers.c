@@ -132,13 +132,13 @@ execargs_t* execargs(char *file, char** args) {
 }
 
 static void sigint_ignore(int sig) {};
+
 static void sig_exit(int sig) {
     char buf[256];
     sprintf(buf, "Process %d killed\n", getpid());
     write(STDERR_FILENO, buf, strlen(buf));
     exit(0);
 }
-
 
 int exec(execargs_t *args) {
     int np = fork();
