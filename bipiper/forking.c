@@ -12,28 +12,26 @@
 #define BACKLOG 256
 #define MAX_FILE_SIZE 4096
 
-int main(int argc, char *argv[])
-{
+
+void proc(int a, int b) {
+    char buf[MAX_FILE_SIZE];
+    int n;
+    while ((n = read_until(a, buf, MAX_FILE_SIZE, '\n')) > 0) {
+        buf[n] = 0;
+        printf("Rec from %d: %s", a, buf);
+        if (write_(b, buf, n) < 0)
+            break;
+    }
+    close(a);
+    close(b);
+    exit(EXIT_SUCCESS); 
+}
+
+int init_port(char* port) {
     struct addrinfo hints;
     struct addrinfo *result, *rp;
     int sfd, s;
     struct sockaddr_storage peer_addr;
-    socklen_t peer_addr_len;
-    ssize_t nread;
-    if (argc != 3) {
-        fprintf(stderr, "Usage: ./%s port file\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
-    int filefd = open(argv[2], O_RDONLY);
-    check(filefd);
-    char file[MAX_FILE_SIZE];
-    int filelen = read_(filefd, file, MAX_FILE_SIZE);
-    if (filelen == MAX_FILE_SIZE) {
-        fprintf(stderr, "File too big.\n");
-        exit(EXIT_FAILURE);
-    }
-    close(filefd);
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;    
@@ -43,12 +41,11 @@ int main(int argc, char *argv[])
     hints.ai_canonname = NULL;
     hints.ai_addr = NULL;
     hints.ai_next = NULL;
-    s = getaddrinfo(NULL, argv[1], &hints, &result);
+    s = getaddrinfo(NULL, port, &hints, &result);
     if (s != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
         exit(EXIT_FAILURE);
     }
-
     for (rp = result; rp != NULL; rp = rp->ai_next) {
         sfd = socket(rp->ai_family, rp->ai_socktype,
                 rp->ai_protocol);
@@ -58,31 +55,48 @@ int main(int argc, char *argv[])
             break;
         close(sfd);
     }
+    
+    freeaddrinfo(result);            
+    if (rp == NULL)
+        return -1;
+    return sfd;
+}
 
-    if (rp == NULL) {               
-        fprintf(stderr, "Could not bind\n");
+int main(int argc, char *argv[])
+{
+    if (argc != 3) {
+        fprintf(stderr, "Usage: ./%s port port\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-
-    freeaddrinfo(result);           
-    check(listen(sfd, BACKLOG));
-
+    int sfd[2];
+    for (int i = 0; i < 2; ++i) {
+        sfd[i] = init_port(argv[i + 1]);
+        check(sfd[i]);
+    }
+    check(listen(sfd[0], BACKLOG)); 
+    check(listen(sfd[1], BACKLOG));
+    
     while (1) {
         struct sockaddr addr;
         socklen_t slen;
         memset(&addr, 0, sizeof(addr));
         memset(&slen, 0, sizeof(slen));
-        int fd = accept(sfd, &addr, &slen);
-        check(fd);
+        int fd[2];
+        for (int i = 0; i < 2; ++i) {
+            fd[i] = accept(sfd[i], &addr, &slen);
+        }
+        check(fd[0]);
+        check(fd[1]);
         int prc = fork();
         check(prc);
-        if (prc == 0) {
-            write_(fd, file, filelen);
-            close(fd);
-            exit(EXIT_SUCCESS);
-        } else {
-            close(fd);
-        }        
+        if (prc == 0) 
+            proc(fd[0], fd[1]);  
+        prc = fork();
+        check(prc);
+        if (prc == 0) 
+            proc(fd[1], fd[0]);
+        close(fd[0]);
+        close(fd[1]);
     }
     return 0;
 }
