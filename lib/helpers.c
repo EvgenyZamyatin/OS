@@ -116,7 +116,7 @@ int spawn(const char* file, char* const argv[]) {
         //dup2(fd, STDERR_FILENO);              
         //close(fd);
 		execvp(file, argv);
-        exit(0);
+        exit(1);
 	}
 }
 

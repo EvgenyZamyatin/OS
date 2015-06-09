@@ -53,41 +53,49 @@ int init_port(char* port) {
 //===========TONNEL_T=============
 typedef struct tonnel_t {
     int fd;
-    int inlen;
-    int writeend;
-    int readend;
+    int *wlen;
+    int *rlen;
+    char *writeend;
+    char *readend;
     struct tonnel_t* twin;
 } tonnel_t;
 
 tonnel_t* tonnel(int fd) {
     tonnel_t* ans = (tonnel_t*)malloc(sizeof(tonnel_t));
-    *ans = (tonnel_t) {.fd = fd, .inlen = 0, .writeend = -1, .readend = -1, .twin = NULL};
+    *ans = (tonnel_t) {.fd = fd, .wlen = (int*)malloc(sizeof(int)), 
+        .rlen = NULL, .writeend = (char*)malloc(MAX_FILE_SIZE), .readend = NULL, .twin = NULL};
+    *(ans->wlen) = 0;
     return ans;
 } 
 
+int min(int a, int b) {
+    if (a < b)
+        return a;
+    return b;
+}
+
+char buf[MAX_FILE_SIZE];
 int read_tonnel(tonnel_t* tonnel) {
-    char buf[MAX_FILE_SIZE];
-    int n = read(tonnel->readend, buf, tonnel->inlen);
-    if (n < 0)
-        return -1;
-    write_(tonnel->fd, buf, n);
-    tonnel->inlen -= n;
-    return 0;
+    int n = *(tonnel->rlen);
+    int n1 = write(tonnel->fd, tonnel->readend, n);
+    if (n1 < 0)
+        return n1;
+    memmove(tonnel->readend, tonnel->readend + n1, *(tonnel->rlen) - n1);
+    *(tonnel->rlen) -= n1;
+    return n1;
 }
 
 int write_tonnel(tonnel_t* tonnel) {
-    char buf[MAX_FILE_SIZE];
-    int n = read_until(tonnel->fd, buf, MAX_FILE_SIZE, '\n');
+    int n = read(tonnel->fd, tonnel->writeend + *(tonnel->wlen), MAX_FILE_SIZE - *(tonnel->wlen));
     if (n < 0)
-        return -1;
-    write_(tonnel->writeend, buf, n);
-    tonnel->twin->inlen += n;
-    return 0;
+        return n;
+    *(tonnel->wlen) += n;
+    return n;
 }
 
 void free_tonnel(tonnel_t* tonnel) {
-    close(tonnel->readend);
-    close(tonnel->writeend);
+    free(tonnel->writeend);
+    free(tonnel->wlen);
     close(tonnel->fd);
     free(tonnel);
 }
@@ -102,14 +110,10 @@ typedef struct connection_t {
 connection_t* connection(int cfda, int cfdb) {
     tonnel_t* a = tonnel(cfda);
     tonnel_t* b = tonnel(cfdb);
-    int pipefda[2];
-    int pipefdb[2];
-    pipe(pipefda);
-    pipe(pipefdb);
-    a->writeend = pipefda[1];
-    a->readend = pipefdb[0];
-    b->writeend = pipefdb[1];
-    b->readend = pipefda[0];
+    a->readend = b->writeend;
+    a->rlen = b->wlen;
+    b->readend = a->writeend;
+    b->rlen = a->wlen;
     a->twin = b;
     b->twin = a;
     connection_t* c = (connection_t*)malloc(sizeof(connection_t));
@@ -124,20 +128,10 @@ void free_connection(connection_t* c) {
 //========================================
 
 void handle(int epollfd, struct epoll_event *event) {
-    if (event->events & EPOLLRDHUP) {
-        tonnel_t* a = (tonnel_t*)event->data.ptr;
-        tonnel_t* b = a->twin;
-        printf("%d discoonected\n", a->fd); 
-        epoll_ctl(epollfd, EPOLL_CTL_DEL, a->fd, NULL);
-        epoll_ctl(epollfd, EPOLL_CTL_DEL, b->fd, NULL);
-        free_tonnel(a);
-        free_tonnel(b);
-        return;
-    } 
     if (event->events & EPOLLIN) {
         tonnel_t* t = (tonnel_t*)event->data.ptr;
         printf("%d have data\n", t->fd);
-        if (t->twin->inlen == 0) {
+        if (*(t->twin->rlen) == 0) {
             struct epoll_event ev;
             ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
             ev.data.ptr = t->twin;
@@ -149,15 +143,26 @@ void handle(int epollfd, struct epoll_event *event) {
         tonnel_t* t = (tonnel_t*)event->data.ptr;
         printf("%d ready to out\n", t->fd);
         read_tonnel(t);
-        if (t->inlen == 0) {
+        if (*(t->rlen) == 0) {
             struct epoll_event ev;
             ev.events = EPOLLIN | EPOLLRDHUP;
             ev.data.ptr = t;
             epoll_ctl(epollfd, EPOLL_CTL_MOD, t->fd, &ev);
         }
     }
+    if (event->events & EPOLLRDHUP) {
+        tonnel_t* a = (tonnel_t*)event->data.ptr;
+        tonnel_t* b = a->twin;
+        read_tonnel(b);
+        while (write_tonnel(a))read_tonnel(b);
+        printf("%d disconected\n", a->fd); 
+        epoll_ctl(epollfd, EPOLL_CTL_DEL, a->fd, NULL);
+        epoll_ctl(epollfd, EPOLL_CTL_DEL, b->fd, NULL);
+        free_tonnel(a);
+        free_tonnel(b);
+        return;
+    } 
 } 
-
 
 int main(int argc, char *argv[])
 {
@@ -185,13 +190,14 @@ int main(int argc, char *argv[])
     ev.events = 0;
     ev.data.ptr = &sfd[1];
     check(epoll_ctl(epollfd, EPOLL_CTL_ADD, sfd[1], &ev));
-
     int fda = -1 , fdb = -1;
     while (1) {
         printf("====\n");
         int n;
+        printf("<wait\n");
         while (((n = epoll_wait(epollfd, events, MAX_EVENTS, -1)) == -1) 
                 && (errno == EINTR));
+        printf("wait>\n");
         check(n);
         for (int i = 0; i < n; ++i) {
             if (events[i].data.ptr == &sfd[0]) {
