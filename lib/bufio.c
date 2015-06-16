@@ -52,8 +52,6 @@ ssize_t buf_fill(int fd, buf_t *buf, size_t required) {
 }
 
 ssize_t buf_flush(int fd, buf_t *buf, size_t required) {
-	if (required == -1)
-		required = buf_size(buf);
 	check(buf != NULL);
 	check(required <= buf_capacity(buf));
 	int wrote = 0;
